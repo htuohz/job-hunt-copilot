@@ -1,0 +1,28 @@
+{
+  "name": "job-hunt-copilot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Personal job-search platform: aggregate, filter and track roles, exposed to Claude via MCP.",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "db:migrate": "tsx src/scripts/migrate.ts",
+    "import:json": "tsx src/scripts/import-json.ts",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "dotenv": "^18.0.8",
+    "pg": "^8.23.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "@types/pg": "^8.23.1",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}
