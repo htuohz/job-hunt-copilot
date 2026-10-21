@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { hardFilter } from "../src/jobs/filter.js";
+import { hardFilter } from "../src/jobs/filter.ts";
 
 test("a Melbourne full-stack role passes", () => {
   const r = hardFilter({ title: "Full Stack Engineer", location: "Richmond VIC", salaryMax: 150000 });

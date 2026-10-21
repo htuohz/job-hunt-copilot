@@ -4,8 +4,8 @@
  */
 import { readFile } from "node:fs/promises";
 import { z } from "zod";
-import { createPool } from "../db.js";
-import { upsertJob } from "../jobs/store.js";
+import { createPool } from "../db.ts";
+import { upsertJob } from "../jobs/store.ts";
 
 const ScrapedJobSchema = z.object({
   title: z.string(),

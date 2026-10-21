@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { canonicalUrl, dedupeKey, parseDate, parseSalary } from "../src/jobs/normalize.js";
+import { canonicalUrl, dedupeKey, parseDate, parseSalary } from "../src/jobs/normalize.ts";
 
 test("canonicalUrl collapses LinkedIn tracking URLs to one job URL", () => {
   assert.equal(

@@ -1,4 +1,13 @@
 node_modules/
 dist/
+.next/
+*.tsbuildinfo
+next-env.d.ts
 .env
 *.log
+__pycache__/
+*.pyc
+.venv/
+scrapers/all_jobs.json
+scrapers/seen_jobs.json
+scrapers/.env
