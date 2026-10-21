@@ -1,10 +1,15 @@
 # Job Hunt Copilot
 
-A personal job-search platform. Scrapers collect roles from job boards and company career pages, this service stores and filters them in PostgreSQL, tracks applications, and (later) exposes the workflow to Claude through an MCP server.
+A personal job-search platform. Scrapers collect roles from job boards and alert emails, a shared TypeScript core stores, dedupes and filters them in PostgreSQL, and a Next.js app is where I review them. Later, the same core will be exposed to Claude through an MCP server.
 
-## Status
+## Layout
 
-Milestone 1 in progress: the database, deduplication, hard-requirement filtering and an import of the old `job-picks` data are done. Next: point the Python scrapers at the database and send a daily digest of new roles.
+```
+apps/web/        Next.js app: job list with save / hide, server actions for status changes
+packages/core/   Shared TypeScript: Postgres access, dedupe, hard filter, job queries (+ tests)
+scrapers/        Python scrapers that collect roles into scrapers/all_jobs.json
+db/migrations/   SQL schema: companies, jobs, applications, events, contacts
+```
 
 ## Run it locally
 
@@ -13,14 +18,13 @@ cp .env.example .env
 docker compose up -d          # Postgres 16 on localhost:5432
 npm install
 npm run db:migrate
-npm run import:json -- ../job-picks/all_jobs.json
-npm test                      # unit tests; set TEST_DATABASE_URL to also run the DB tests
+npm run import:scraped        # or: npm run import:json -- <path to all_jobs.json>
+npm run dev                   # http://localhost:3000
 ```
 
-## Layout
+Tests: `npm test`. Set `TEST_DATABASE_URL` to also run the database tests.
 
-- `db/migrations/` – SQL schema: companies, jobs, applications, events, contacts
-- `src/jobs/normalize.ts` – canonical URLs, cross-board dedupe keys, salary and date parsing
-- `src/jobs/filter.ts` – hard requirements (Melbourne or AU-remote, permanent, IC level, salary floor)
-- `src/jobs/store.ts` – upsert that refreshes scraped fields but never resets a status you set
-- `src/scripts/` – CLI entry points for migrations and the JSON import
+## Status
+
+- Done: schema, cross-board dedupe, hard-requirement filter (Melbourne or AU-remote, permanent, IC level, salary floor), JSON import, job list UI.
+- Next: scrapers write to Postgres directly, daily digest of new roles, application tracking pages, MCP server.

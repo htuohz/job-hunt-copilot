@@ -1,6 +1,6 @@
 import type pg from "pg";
-import { canonicalUrl, companyKey, dedupeKey, parseDate, parseSalary } from "./normalize.js";
-import { hardFilter } from "./filter.js";
+import { canonicalUrl, companyKey, dedupeKey, parseDate, parseSalary } from "./normalize.ts";
+import { hardFilter } from "./filter.ts";
 
 /** A job as the Python scrapers produce it (one entry of all_jobs.json). */
 export interface ScrapedJob {
@@ -82,4 +82,53 @@ export async function upsertJob(db: Queryable, job: ScrapedJob): Promise<boolean
     ],
   );
   return rows[0]!.inserted;
+}
+
+export const JOB_STATUSES = ["new", "saved", "hidden", "archived"] as const;
+export type JobStatus = (typeof JOB_STATUSES)[number];
+
+export interface JobRow {
+  id: number;
+  title: string;
+  company: string | null;
+  location: string | null;
+  url: string;
+  salaryText: string | null;
+  source: string;
+  publishedOn: string | null;
+  firstSeenAt: Date;
+  score: number;
+  matched: string[];
+  filterPass: boolean;
+  filterReasons: string[];
+  status: JobStatus;
+}
+
+export interface ListJobsOptions {
+  status?: JobStatus;
+  /** Include jobs that failed the hard filter. Off by default. */
+  includeFiltered?: boolean;
+  limit?: number;
+}
+
+/** Jobs for review, best match first. One row per dedupe_key, so a role posted on several boards shows once. */
+export async function listJobs(db: Queryable, opts: ListJobsOptions = {}): Promise<JobRow[]> {
+  const { rows } = await db.query<JobRow>(
+    `SELECT DISTINCT ON (j.dedupe_key)
+            j.id, j.title, c.name AS company, j.location, j.url, j.salary_text AS "salaryText",
+            j.source, to_char(j.published_on, 'YYYY-MM-DD') AS "publishedOn", j.first_seen_at AS "firstSeenAt",
+            j.score, j.matched, j.filter_pass AS "filterPass", j.filter_reasons AS "filterReasons", j.status
+     FROM jobs j LEFT JOIN companies c ON c.id = j.company_id
+     WHERE j.status = $1 AND ($2 OR j.filter_pass)
+     ORDER BY j.dedupe_key, j.score DESC, j.first_seen_at DESC`,
+    [opts.status ?? "new", opts.includeFiltered ?? false],
+  );
+  rows.sort((a, b) => b.score - a.score || b.firstSeenAt.getTime() - a.firstSeenAt.getTime());
+  return rows.slice(0, opts.limit ?? 200);
+}
+
+/** Moves a job between new, saved, hidden and archived. Returns false if the job does not exist. */
+export async function setJobStatus(db: Queryable, id: number, status: JobStatus): Promise<boolean> {
+  const { rowCount } = await db.query("UPDATE jobs SET status = $2 WHERE id = $1", [id, status]);
+  return rowCount === 1;
 }

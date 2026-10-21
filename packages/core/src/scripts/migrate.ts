@@ -1,5 +1,5 @@
-import { createPool } from "../db.js";
-import { migrate } from "../migrate.js";
+import { createPool } from "../db.ts";
+import { migrate } from "../migrate.ts";
 
 const pool = createPool();
 try {

@@ -2,8 +2,8 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import pg from "pg";
-import { migrate } from "../src/migrate.js";
-import { upsertJob } from "../src/jobs/store.js";
+import { migrate } from "../src/migrate.ts";
+import { listJobs, setJobStatus, upsertJob } from "../src/jobs/store.ts";
 
 const url = process.env.TEST_DATABASE_URL;
 const pool = url ? new pg.Pool({ connectionString: url }) : null;
@@ -43,4 +43,28 @@ test("re-importing a job updates it without duplicating or resetting status", { 
 
 test("migrate is idempotent", { skip: !pool }, async () => {
   assert.deepEqual(await migrate(pool!), []);
+});
+
+test("listJobs shows one row per role and hides filtered or dismissed jobs", { skip: !pool }, async () => {
+  await pool!.query("TRUNCATE jobs, companies RESTART IDENTITY CASCADE");
+  const base = { title: "Software Engineer", company: "Canva", location: "Melbourne VIC", source: "seek" };
+  await upsertJob(pool!, { ...base, url: "https://seek.com.au/job/1", score: 20 });
+  await upsertJob(pool!, { ...base, url: "https://linkedin.com/jobs/view/2", score: 30, source: "linkedin" });
+  await upsertJob(pool!, { ...base, title: "Graduate Developer", url: "https://seek.com.au/job/3" });
+  await upsertJob(pool!, { ...base, title: "Backend Engineer", url: "https://seek.com.au/job/4", score: 10 });
+
+  const jobs = await listJobs(pool!);
+  assert.deepEqual(
+    jobs.map((j) => [j.title, j.source]),
+    [
+      ["Software Engineer", "linkedin"],
+      ["Backend Engineer", "seek"],
+    ],
+  );
+
+  assert.equal(await setJobStatus(pool!, jobs[1]!.id, "hidden"), true);
+  assert.equal((await listJobs(pool!)).length, 1);
+  assert.equal((await listJobs(pool!, { status: "hidden" }))[0]!.title, "Backend Engineer");
+  assert.equal((await listJobs(pool!, { includeFiltered: true })).length, 2);
+  assert.equal(await setJobStatus(pool!, 9999, "saved"), false);
 });

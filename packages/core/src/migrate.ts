@@ -2,7 +2,7 @@ import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import type pg from "pg";
 
-const MIGRATIONS_DIR = path.resolve(import.meta.dirname, "../db/migrations");
+const MIGRATIONS_DIR = path.resolve(import.meta.dirname, "../../../db/migrations");
 
 /** Applies every .sql file in db/migrations that has not run yet, in filename order. */
 export async function migrate(pool: pg.Pool, dir = MIGRATIONS_DIR): Promise<string[]> {
